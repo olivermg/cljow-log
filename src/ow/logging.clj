@@ -57,7 +57,7 @@
                                                true         [false name]))
                                      [false nil] v)
                              second)
-                     "destructred-vector")
+                     "destructed-vector")
                  "-"))
 
           (alias-arg [arg]
