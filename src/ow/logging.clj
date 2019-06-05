@@ -114,7 +114,7 @@
     `(let-clj [~datasym ~data]
        (-> +callinfo+
            (assoc :name  ~(str name)
-                  :level ~(str level)
+                  :level ~(pr-str level)
                   :time  (java.util.Date.)
                   :ns    ~(str *ns*))
            ~(if msg
