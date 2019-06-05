@@ -109,12 +109,12 @@
 
 (defmacro log-data
   "Returns the current trace info map plus some augmented data (e.g. timestamp)."
-  [name level & [msg data file form]]
+  [level name & [msg data file form]]
   (let-clj [datasym (gensym (str name "-data-"))
             file (or file *file*)
             form (or form &form)
             fnname (some-> form first str)
-            {:keys [line column]} (meta &form)]
+            {:keys [line column]} (meta form)]
     `(let-clj [~datasym ~data]
        (-> +callinfo+
            (assoc :name   ~(str name)
@@ -137,13 +137,13 @@
 
 (defmacro log-str
   "Returns the current trace info map formatted as string."
-  [name level & [msg data file form]]
-  `(pr-str (log-data ~name ~level ~msg ~data ~(or file *file*) ~(or form &form))))
+  [level name & [msg data file form]]
+  `(pr-str (log-data ~level ~name ~msg ~data ~(or file *file*) ~(or form &form))))
 
 (defmacro log
   "Prints a log message based on the current trace info map."
   [level name & [msg data file form]]
-  `(log/log ~level (log-str ~name ~level ~msg ~data ~(or file *file*) ~(or form &form))))
+  `(log/log ~level (log-str ~level ~name ~msg ~data ~(or file *file*) ~(or form &form))))
 
 (defmacro trace [name & [msg data]]
   `(log :trace ~name ~msg ~data ~*file* ~&form))
