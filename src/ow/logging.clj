@@ -109,10 +109,11 @@
 
 (defmacro log-data
   "Returns the current trace info map plus some augmented data (e.g. timestamp)."
-  [name level & [msg data]]
+  [name level & [msg data file form]]
   (let-clj [datasym (gensym (str name "-data-"))
-            file *file*
-            fnname (some-> &form first str)
+            file (or file *file*)
+            form (or form &form)
+            fnname (some-> form first str)
             {:keys [line column]} (meta &form)]
     `(let-clj [~datasym ~data]
        (-> +callinfo+
@@ -136,31 +137,31 @@
 
 (defmacro log-str
   "Returns the current trace info map formatted as string."
-  [name level & [msg data]]
-  `(pr-str (log-data ~name ~level ~msg ~data)))
+  [name level & [msg data file form]]
+  `(pr-str (log-data ~name ~level ~msg ~data ~(or file *file*) ~(or form &form))))
 
 (defmacro log
   "Prints a log message based on the current trace info map."
-  [level name & [msg data]]
-  `(log/log ~level (log-str ~name ~level ~msg ~data)))
+  [level name & [msg data file form]]
+  `(log/log ~level (log-str ~name ~level ~msg ~data ~(or file *file*) ~(or form &form))))
 
 (defmacro trace [name & [msg data]]
-  `(log :trace ~name ~msg ~data))
+  `(log :trace ~name ~msg ~data ~*file* ~&form))
 
 (defmacro debug [name & [msg data]]
-  `(log :debug ~name ~msg ~data))
+  `(log :debug ~name ~msg ~data ~*file* ~&form))
 
 (defmacro info [name & [msg data]]
-  `(log :info ~name ~msg ~data))
+  `(log :info ~name ~msg ~data ~*file* ~&form))
 
 (defmacro warn [name & [msg data]]
-  `(log :warn ~name ~msg ~data))
+  `(log :warn ~name ~msg ~data ~*file* ~&form))
 
 (defmacro error [name & [msg data]]
-  `(log :error ~name ~msg ~data))
+  `(log :error ~name ~msg ~data ~*file* ~&form))
 
 (defmacro fatal [name & [msg data]]
-  `(log :fatal ~name ~msg ~data))
+  `(log :fatal ~name ~msg ~data ~*file* ~&form))
 
 
 (defn-clj attach
