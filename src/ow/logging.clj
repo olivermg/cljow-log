@@ -110,13 +110,20 @@
 (defmacro log-data
   "Returns the current trace info map plus some augmented data (e.g. timestamp)."
   [name level & [msg data]]
-  (let-clj [datasym (gensym (str name "-data-"))]
+  (let-clj [datasym (gensym (str name "-data-"))
+            file *file*
+            fnname (some-> &form first str)
+            {:keys [line column]} (meta &form)]
     `(let-clj [~datasym ~data]
        (-> +callinfo+
-           (assoc :name  ~(str name)
-                  :level ~(pr-str level)
-                  :time  (java.util.Date.)
-                  :ns    ~(str *ns*))
+           (assoc :name   ~(str name)
+                  :level  ~level
+                  :time   (java.util.Date.)
+                  :ns     ~(str *ns*)
+                  :file   ~file
+                  :fn     ~fnname
+                  :line   ~line
+                  :column ~column)
            ~(if msg
               `(assoc :msg (str ~msg))
               `identity)
