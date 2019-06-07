@@ -114,15 +114,15 @@
             file (or file *file*)
             form (or form &form)
             {:keys [line column]} (meta form)]
-    `(let-clj [~datasym ~data]
+    `(let-clj [~datasym ~data
+               ste#     (-> (Throwable.) .getStackTrace first)]
        (-> +callinfo+
            (assoc :name   ~(str name)
                   :level  ~level
                   :time   (java.util.Date.)
                   :ns     ~(str *ns*)
                   :file   ~file
-                  :fn     (let [ste# (-> (Throwable.) .getStackTrace first)]
-                            (str (.getClassName ste#) "/" (.getMethodName ste#)))
+                  :fn     (str (.getClassName ste#) "/" (.getMethodName ste#))
                   :line   ~line
                   :column ~column)
            ~(if msg
