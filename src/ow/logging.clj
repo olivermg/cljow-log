@@ -113,7 +113,6 @@
   (let-clj [datasym (gensym (str name "-data-"))
             file (or file *file*)
             form (or form &form)
-            fnname (some-> form first str)
             {:keys [line column]} (meta form)]
     `(let-clj [~datasym ~data]
        (-> +callinfo+
@@ -122,7 +121,8 @@
                   :time   (java.util.Date.)
                   :ns     ~(str *ns*)
                   :file   ~file
-                  :fn     ~fnname
+                  :fn     (let [ste# (-> (Throwable.) .getStackTrace first)]
+                            (str (.getClassName ste#) "/" (.getMethodName ste#)))
                   :line   ~line
                   :column ~column)
            ~(if msg
