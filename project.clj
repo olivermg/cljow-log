@@ -39,7 +39,7 @@
                         :source-paths ["src/cljc"]
                         :compiler {:target :nodejs
                                    :main ow.logging
-                                   :output-dir "lib/cljs/cljow-log"
+                                   :output-dir "lib/cljs/prod/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
                                    :source-map true
@@ -54,7 +54,7 @@
                         :figwheel true  ;; inject figwheel socket handling code into resulting js
                         :compiler {:target :nodejs
                                    :main ow.logging
-                                   :output-dir "lib/cljs/cljow-log"
+                                   :output-dir "lib/cljs/dev/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
                                    :source-map true
