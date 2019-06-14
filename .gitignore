@@ -10,6 +10,10 @@ pom.xml.asc
 /.nrepl-port
 .hgignore
 .hg/
-.cljs_node_repl/
+/.cljs_node_repl
+/node_modules/
+/log
+/lib/cljs
+/package*.json
 *~
 *.swp
