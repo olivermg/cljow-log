@@ -1,14 +1,15 @@
 (ns user
-  (:require [cider.piggieback :as p]
-            [cljs.repl.node :as rn]
-            #_[figwheel-sidecar.repl-api :as f]))
+  (:require [cljs.repl.node :as rn]
+            [figwheel-sidecar.repl-api :as f]))
 
-#_(defn start-figwheel []
-  (f/start-figwheel! "nodejs"))
+(defn start-figwheel []
+  (f/start-figwheel! "nodejs-dev"))
 
-#_(defn stop-figwheel []
+(defn stop-figwheel []
   (f/stop-figwheel!))
 
 (defn node-repl []
-  (p/cljs-repl (rn/repl-env))
-  #_(f/cljs-repl "nodejs"))
+  ;;; NOTE: for a prompt to appear in a figwheel repl, a client needs to connect, i.e.
+  ;;;   web: a browser loading the compiled js code
+  ;;;   node: a node process loading the compiled js code
+  (f/cljs-repl "nodejs-dev"))
