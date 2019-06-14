@@ -7,7 +7,7 @@
             #_[lein-figwheel "0.5.18"]  ;; starting figwheel on cmdline (we don't use it as we're using cider)
             ]
   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.516" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.520" :scope "provided"]
                  [org.clojure/tools.logging "0.4.1"]]
   :source-paths ["src/cljc"]
   :clean-targets [:target-path :compile-path "lib/cljs"]
