@@ -31,13 +31,13 @@
 (defn log-str
   "Returns the current trace info map formatted as string."
   [level msg & [data]]
-  (pr-str (log-data level name msg data)))
+  (pr-str (log-data level msg data)))
 
 (defn log
   "Prints a log message based on the current trace info map."
   [level msg & [data]]
-  #?(:clj  (log/log level (log-str level name msg data))
-     :cljs (println (log-str level name msg data))))
+  #?(:clj  (log/log level (log-str level msg data))
+     :cljs (println (log-str level msg data))))
 
 (defn trace [msg & [data]]
   (log :trace msg data))

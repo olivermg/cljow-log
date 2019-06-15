@@ -19,7 +19,7 @@
   [obj]
   (some-> obj meta ::callinfo))
 
-(defmacro with-detached-loginfo
+(defmacro with-loginfo
   "Sets the current trace info map to loginfo."
   [loginfo & body]
   `(binding [c/+callinfo+ (merge-loginfo ~loginfo c/+callinfo+)]
