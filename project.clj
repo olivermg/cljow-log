@@ -38,7 +38,7 @@
   :cljsbuild {:builds [{:id "nodejs-prod"
                         :source-paths ["src/cljc"]
                         :compiler {:target :nodejs
-                                   :main ow.logging
+                                   :main ow.logging.api.alpha
                                    :output-dir "lib/cljs/prod/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
@@ -53,7 +53,7 @@
                         :source-paths ["src/cljc"]
                         :figwheel true  ;; inject figwheel socket handling code into resulting js
                         :compiler {:target :nodejs
-                                   :main ow.logging
+                                   :main ow.logging.api.alpha
                                    :output-dir "lib/cljs/dev/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
