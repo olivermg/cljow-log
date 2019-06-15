@@ -1,64 +1,14 @@
-(ns ow.logging
+(ns ow.logging.log
   #?(:cljs (:require-macros [ow.logging.macros :as m]))
-  #?(:clj  (:require [clojure.string :as s]
-                     [clojure.tools.logging :as log]
+  #?(:clj  (:require [clojure.tools.logging :as log]
+                     [ow.logging.core :as c]
                      [ow.logging.macros :as m])
-     :cljs (:require [clojure.string :as s])))
-
-(def ^:dynamic +callinfo+ {:trace []})
-
-(def MAX_INT #?(:clj  Integer/MAX_VALUE
-                :cljs (.. js/Number -MAX_SAFE_INTEGER)))
-
-(defn pr-str-map-vals [m]
-  (->> m
-       (map (fn [[k v]]
-              [k (pr-str v)]))
-       (into {})))
-
-(defn current-ste-info []
-  #?(:clj (let [st (some-> (Throwable.) .getStackTrace seq)
-                ste (loop [[ste & st] st]
-                      (let [classname (.getClassName ste)]
-                        (if (or (s/starts-with? classname "ow.logging")
-                                (s/starts-with? classname "clojure"))
-                          (recur st)
-                          ste)))
-                [ns fn file line] (if ste
-                                    (concat (s/split (.getClassName ste) #"\$" 2)
-                                            [(.getFileName ste) (.getLineNumber ste)])
-                                    ["?" "?" "?" "?"])]
-            {:file file
-             :fn   fn
-             :line line
-             :ns   ns
-             :time (java.util.Date.)})
-
-     :cljs (let [st (some-> (js/Error.) (.-stack) (s/split "\n"))]
-             {:file :tdb
-              :fn   :tbd
-              :line :tbd
-              :ns   :tbd
-              :time (js/Date.)})))
-
-(defn merge-loginfo [loginfo1 loginfo2]
-  (update loginfo2 :trace #(-> (concat (:trace loginfo1) %)
-                               vec)))
-
-(defn merge-loginfos [& loginfos]
-  (reduce merge-loginfo loginfos))
-
-(defn make-trace-info* [name & args]  ;; TODO: create record for trace step, to prevent overly verbose printing (e.g. of large arguments)
-  (-> {:id   (rand-int MAX_INT)
-       :name name}
-      (merge (current-ste-info))
-      (into [(when-not (empty? args)
-               [:args (map pr-str args)])])))
+     :cljs (:require [ow.logging.core :as c])))
 
 (defn get-trace
   "Returns the current trace history."
   []
-  (get-in +callinfo+ [:trace]))
+  (get-in c/+callinfo+ [:trace]))
 
 (defn get-trace-root
   "Returns the root/first/topmost entry in the current trace history."
@@ -69,12 +19,12 @@
   "Returns the current trace info map plus some augmented data (e.g. timestamp)."
   [level msg & [data]]
   (m/with-trace ::log
-    (-> +callinfo+
+    (-> c/+callinfo+
         (assoc :level  level
                :msg    msg)
         (update :data merge
                 (cond
-                  (map? data) (pr-str-map-vals data)
+                  (map? data) (c/pr-str-map-vals data)
                   (nil? data) {}
                   true        {::log-data (pr-str data)})))))
 

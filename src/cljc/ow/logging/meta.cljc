@@ -1,5 +1,6 @@
 (ns ow.logging.meta
-  (:require [ow.logging :as l])
+  (:require [ow.logging.core :as c]
+            [ow.logging.log :as l])
   #?(:clj  (:import [clojure.lang IObj])))
 
 (defn attach
@@ -8,7 +9,7 @@
   [obj]
   #?(:clj  (if (instance? IObj obj)
              (with-meta obj
-               {::callinfo l/+callinfo+})
+               {::callinfo c/+callinfo+})
              (do (l/info attach "cannot attach log information to obj not implementing IObj" {:obj obj})
                  obj))
      :cljs {}))
@@ -21,5 +22,5 @@
 (defmacro with-detached-loginfo
   "Sets the current trace info map to loginfo."
   [loginfo & body]
-  `(binding [l/+callinfo+ (merge-loginfo ~loginfo l/+callinfo+)]
+  `(binding [c/+callinfo+ (merge-loginfo ~loginfo c/+callinfo+)]
      ~@body))

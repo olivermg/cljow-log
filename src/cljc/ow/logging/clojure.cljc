@@ -2,7 +2,14 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  (:require [ow.logging :as l]))
+  (:require [ow.logging.macros :as m]))
+
+(defn-clj merge-loginfo [loginfo1 loginfo2]
+  (update loginfo2 :trace #(-> (concat (:trace loginfo1) %)
+                               vec)))
+
+(defn-clj merge-loginfos [& loginfos]
+  (reduce merge-loginfo loginfos))
 
 (defn-clj lhs-aliases [args]
   (letfn [(map-name [m]
@@ -46,7 +53,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(fn-clj ~name [~@lhs]
-             (l/with-trace* ~name [~@rhs]
+             (m/with-trace* ~name [~@rhs]
                (let-clj [[~@(remove-& args)] [~@rhs]]
                  ~@body)))))
 
@@ -56,7 +63,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(defn-clj ~name [~@lhs]
-       (l/with-trace* ~name [~@rhs]
+       (m/with-trace* ~name [~@rhs]
          (let-clj [[~@(remove-& args)] [~@rhs]]
            ~@body)))))
 
@@ -72,5 +79,5 @@
                ~@(mapcat (fn-clj [[sym value] alias]
                                  `[~sym ~alias])
                          bindings rhs)]
-       (binding [+callinfo+ (apply l/merge-loginfos (list ~@rhs +callinfo+))]
+       (binding [+callinfo+ (apply merge-loginfos (list ~@rhs +callinfo+))]
          ~@body))))
