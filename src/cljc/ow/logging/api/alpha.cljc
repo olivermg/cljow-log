@@ -2,21 +2,21 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  (:require [ow.logging :as l]
-            [ow.logging.clojure :as lc]
-            [ow.logging.meta :as lm]))
+  (:require [ow.logging.log :as l]
+            [ow.logging.clojure :as clj]
+            [ow.logging.meta :as mt]))
 
 (defmacro with-trace
   "Adds an entry into the current trace history."
   [name & body]
-  `(l/with-trace ~name ~@body))
+  `(m/with-trace ~name ~@body))
 
 (defmacro with-trace-data
   "Adds user data into the current trace info map that will be available in subsequent log invocations."
   [data & body]
-  `(l/with-trace-data ~data ~@body))
+  `(m/with-trace-data ~data ~@body))
 
-(defn-clj get-trace 
+(defn-clj get-trace
   "Returns the current trace history."
   []
   (l/get-trace))
@@ -53,21 +53,21 @@
   "Attaches the current trace info map as metadata to obj. Will not do anything if obj is
    not an instance of IObj, because metadata cannot be attached in this case."
   [obj]
-  (lm/attach obj))
+  (mt/attach obj))
 
 (defn-clj detach
   "Returns the attached trace info map from obj."
   [obj]
-  (lm/detach obj))
+  (mt/detach obj))
 
 (defmacro with-loginfo
   "Sets the current trace info map to loginfo."
   [loginfo & body]
-  `(lm/with-loginfo ~loginfo ~@body))
+  `(mt/with-loginfo ~loginfo ~@body))
 
 (defmacro fn [& args]
-  `(lc/fn ~@args))
+  `(clj/fn ~@args))
 (defmacro defn [& args]
-  `(lc/defn ~@args))
+  `(clj/defn ~@args))
 (defmacro let [& args]
-  `(lc/let ~@args))
+  `(clj/let ~@args))
