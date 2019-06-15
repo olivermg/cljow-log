@@ -5,7 +5,7 @@
 ;;;   and we need to require them via :require-macros in cljs code.
 
 (defmacro with-trace* [name [& args] & body]
-  `(binding [ow.logging/+callinfo+ (update ow.logging/+callinfo+ :trace conj (make-trace-info* '~name ~@args))]
+  `(binding [ow.logging/+callinfo+ (update ow.logging/+callinfo+ :trace conj (ow.logging/make-trace-info* '~name ~@args))]
      ~@body))
 
 (defmacro with-trace
