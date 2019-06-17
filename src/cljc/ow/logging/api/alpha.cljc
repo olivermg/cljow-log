@@ -66,7 +66,7 @@
 (defmacro with-logging-info
   "Sets the current logging info to logging-info."
   [logging-info & body]
-  `(mtm/with-logging-info ~logging-info ~@body))
+  `(mt/with-logging-info ~logging-info ~@body))
 
 (defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
