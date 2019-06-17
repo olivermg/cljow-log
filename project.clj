@@ -64,4 +64,15 @@
                                    ;;;:output-wrapper true
                                    :verbose true}}]}
 
-  :figwheel {:server-logfile "log/figwheel.log"})
+  :figwheel {:server-logfile "log/figwheel.log"}
+
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag"]
+                  #_["deploy"]
+                  #_["clean"]
+                  #_["uberjar"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  #_["vcs" "push"]])
