@@ -1,6 +1,6 @@
 (ns ow.logging.log
   #?(:cljs (:require-macros [ow.logging.log :refer [with-checkpoint* with-checkpoint with-data]]))
-  #?(:clj  (:require [clojure.tools.logging :as log]
+  #?(:clj  (:require #_[clojure.tools.logging :as log]
                      [ow.logging.core :as c])
      :cljs (:require [ow.logging.core :as c])))
 
@@ -48,7 +48,8 @@
   (pr-str (log-data level msg data)))
 
 (defn log [level msg & [data]]
-  #?(:clj  (log/log level (log-str level msg data))
+  ;;; TODO: maybe use a logging backend here (at least on the java side)?
+  #?(:clj  (println (log-str level msg data))
      :cljs (println (log-str level msg data))))
 
 (defn trace [msg & [data]]

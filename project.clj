@@ -8,7 +8,7 @@
             ]
   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
-                 [org.clojure/tools.logging "0.4.1"]]
+                 #_[org.clojure/tools.logging "0.4.1"]]
   :source-paths ["src/cljc"]
   :clean-targets [:target-path :compile-path "lib/cljs"]
   :pedantic? :abort
