@@ -1,7 +1,7 @@
 (ns ow.logging.core
   (:require [clojure.string :as s]))
 
-(def ^:dynamic +callinfo+ {:trace []})
+(def ^:dynamic +logging-info+ {:checkpoints []})
 
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
                 :cljs (.. js/Number -MAX_SAFE_INTEGER)))
@@ -14,6 +14,7 @@
 
 (defn current-ste-info []
   #?(:clj (let [st (some-> (Throwable.) .getStackTrace seq)
+                _ (clojure.pprint/pprint st)
                 ste (loop [[ste & st] st]
                       (let [classname (.getClassName ste)]
                         (if (or (s/starts-with? classname "ow.logging")
@@ -37,9 +38,16 @@
               :ns   :tbd
               :time (js/Date.)})))
 
-(defn make-trace-info* [name & args]  ;; TODO: create record for trace step, to prevent overly verbose printing (e.g. of large arguments)
+(defn make-checkpoint* [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
   (-> {:id   (rand-int MAX_INT)
        :name name}
       (merge (current-ste-info))
       (into  [(when-not (empty? args)
                 [:args (map pr-str args)])])))
+
+(defn merge-logging-info [logging-info1 logging-info2]
+  (update logging-info2 :checkpoints #(-> (concat (:checkpoints logging-info1) %)
+                                          vec)))
+
+(defn merge-logging-infos [& logging-infos]
+  (reduce merge-logging-info logging-infos))

@@ -2,14 +2,10 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  (:require [ow.logging.macros :as m]))
-
-(defn-clj merge-loginfo [loginfo1 loginfo2]
-  (update loginfo2 :trace #(-> (concat (:trace loginfo1) %)
-                               vec)))
-
-(defn-clj merge-loginfos [& loginfos]
-  (reduce merge-loginfo loginfos))
+  #?(:cljs (:require-macros [ow.logging.log :as l]))
+  #?(:clj  (:require [ow.logging.core :as c]
+                     [ow.logging.log :as l])
+     :cljs (:require [ow.logging.core :as c])))
 
 (defn-clj lhs-aliases [args]
   (letfn [(map-name [m]
@@ -47,29 +43,30 @@
   (remove #(= % '&) lhs-aliases))
 
 
+
 (defmacro fn
-  "Same as clojure.core/fn, but also adds an entry into the current trace history upon invocation of the fn."
+  "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
   [name [& args] & body]
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(fn-clj ~name [~@lhs]
-             (m/with-trace* ~name [~@rhs]
+             (l/with-checkpoint* ~name [~@rhs]
                (let-clj [[~@(remove-& args)] [~@rhs]]
                  ~@body)))))
 
 (defmacro defn
-  "Same as clojure.core/defn, but also adds en entry into the current trace history upon invocation of the defn."
+  "Same as clojure.core/defn, but also adds a logging checkpoint upon invocation of the defn."
   [name [& args] & body]
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(defn-clj ~name [~@lhs]
-       (m/with-trace* ~name [~@rhs]
+       (l/with-checkpoint* ~name [~@rhs]
          (let-clj [[~@(remove-& args)] [~@rhs]]
            ~@body)))))
 
 (defmacro let
-  "Like clojure.core/let, but also sets the current trace info map to
-  potential trace info maps that might be attached to the given values."
+  "Like clojure.core/let, but also sets the current logging info to
+  potential logging info maps that might be attached to the given values."
   [[& bindings] & body]
   (let-clj [bindings (partition 2 bindings)
             rhs      (->> bindings (map first) lhs-aliases remove-&)]
@@ -79,5 +76,5 @@
                ~@(mapcat (fn-clj [[sym value] alias]
                                  `[~sym ~alias])
                          bindings rhs)]
-       (binding [+callinfo+ (apply merge-loginfos (list ~@rhs +callinfo+))]
+       (binding [c/+logging-info+ (apply c/merge-logging-infos (list ~@rhs c/+logging-info+))]
          ~@body))))

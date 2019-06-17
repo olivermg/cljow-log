@@ -1,25 +1,41 @@
 (ns ow.logging.log
-  #?(:cljs (:require-macros [ow.logging.macros :as m]))
+  #?(:cljs (:require-macros [ow.logging.log :refer [with-checkpoint* with-checkpoint with-data]]))
   #?(:clj  (:require [clojure.tools.logging :as log]
-                     [ow.logging.core :as c]
-                     [ow.logging.macros :as m])
+                     [ow.logging.core :as c])
      :cljs (:require [ow.logging.core :as c])))
 
-(defn get-trace
-  "Returns the current trace history."
-  []
-  (get-in c/+callinfo+ [:trace]))
+;;; NOTE: macros always get compiled in java/jvm, even for cljs code, because they are compile time citizens.
+;;;   this implies that we need to define them in .clj or .cljc files, not in .cljs files.
+;;;   and we need to require them via :require-macros in cljs code.
+;;;
+;;;   you can define and use macros in one single cljc file in cljs by declaring in the ns expr sth like:
+;;;   (:require-macros [macro-ns :refer [macro1 macro2])
+;;;   this way it even works seamlessly in clj too, as in clj you can directly refer to the macros by
+;;;   their unqualified names.
 
-(defn get-trace-root
-  "Returns the root/first/topmost entry in the current trace history."
-  []
-  (get (get-trace) 0))
+(defmacro with-checkpoint* [name [& args] & body]
+  `(binding [c/+logging-info+ (update c/+logging-info+ :checkpoints conj (c/make-checkpoint* '~name ~@args))]
+     ~@body))
 
-(defn log-data
-  "Returns the current trace info map plus some augmented data (e.g. timestamp)."
-  [level msg & [data]]
-  (m/with-trace ::log
-    (-> c/+callinfo+
+(defmacro with-checkpoint [name & body]
+  `(with-checkpoint* ~name []
+     ~@body))
+
+(defmacro with-data [data & body]
+  `(binding [c/+logging-info+ (update c/+logging-info+ :data merge (c/pr-str-map-vals ~data))]
+     ~@body))
+
+
+
+(defn get-checkpoints []
+  (get-in c/+logging-info+ [:trace]))
+
+(defn get-checkpoints-root []
+  (get (get-checkpoints) 0))
+
+(defn log-data [level msg & [data]]
+  (with-checkpoint ::log
+    (-> c/+logging-info+
         (assoc :level  level
                :msg    msg)
         (update :data merge
@@ -28,14 +44,10 @@
                   (nil? data) {}
                   true        {::log-data (pr-str data)})))))
 
-(defn log-str
-  "Returns the current trace info map formatted as string."
-  [level msg & [data]]
+(defn log-str [level msg & [data]]
   (pr-str (log-data level msg data)))
 
-(defn log
-  "Prints a log message based on the current trace info map."
-  [level msg & [data]]
+(defn log [level msg & [data]]
   #?(:clj  (log/log level (log-str level msg data))
      :cljs (println (log-str level msg data))))
 
@@ -68,7 +80,7 @@
       (a/go-loop [x (a/<! foo1r)]
         (when-not (nil? x)
           (let [[x] x]
-            (m/with-trace inside-foo1
+            (with-checkpoint inside-foo1
               (warn foo11 "foo1-1" x)
               (Thread/sleep (rand-int 1000))
               (info foo12 "foo1-2" x)
@@ -108,7 +120,7 @@
 
       (defn baz [x]
         (warn baz1 "baz-1" x)
-        (m/with-trace-data {:user "user123"}
+        (with-data {:user "user123"}
           (pvalues (bar1 (inc x))
                    (bar2 (inc x) nil nil)))
         (info baz2 "baz-2" x))
