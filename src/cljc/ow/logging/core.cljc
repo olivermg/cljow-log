@@ -78,5 +78,5 @@
   +logging-info+)
 
 (defmacro with-logging-info [logging-info & body]
-  `(binding [c/+logging-info+ (c/merge-logging-info ~logging-info c/+logging-info+)]
+  `(binding [+logging-info+ (merge-logging-info ~logging-info +logging-info+)]
      ~@body))
