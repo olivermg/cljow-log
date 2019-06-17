@@ -8,7 +8,11 @@
             ]
   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
-                 #_[org.clojure/tools.logging "0.4.1"]]
+                 #_[org.clojure/tools.logging "0.4.1"]
+
+                 ;;; to resolve conflicts (due to :pedantic? :abort):
+                 [com.google.errorprone/error_prone_annotations "2.1.3"]
+                 [com.google.code.findbugs/jsr305 "3.0.2"]]
   :source-paths ["src/cljc"]
   :clean-targets [:target-path :compile-path "lib/cljs"]
   :pedantic? :abort
@@ -21,8 +25,6 @@
                                   [org.clojure/core.async "0.4.500"]
 
                                   ;;; to resolve conflicts (due to :pedantic? :abort):
-                                  [com.google.errorprone/error_prone_annotations "2.1.3"]
-                                  [com.google.code.findbugs/jsr305 "3.0.2"]
                                   [joda-time "2.9.9"]
                                   [commons-codec "1.11"]
                                   [clj-time "0.14.3"]
