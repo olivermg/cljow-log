@@ -2,16 +2,20 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  #?(:cljs (:require-macros [ow.logging.clojure :as cljm]
+  #?(:cljs (:require-macros [ow.logging.core :as cm]
+                            [ow.logging.clojure :as cljm]
                             [ow.logging.log :as lm]
                             [ow.logging.meta :as mtm]))
-  #?(:clj  (:require [ow.logging.clojure :as clj]
+  #?(:clj  (:require [ow.logging.core :as c]
+                     [ow.logging.core :as cm]
+                     [ow.logging.clojure :as clj]
                      [ow.logging.clojure :as cljm]
                      [ow.logging.log :as l]
                      [ow.logging.log :as lm]
                      [ow.logging.meta :as mt]
                      [ow.logging.meta :as mtm])
-     :cljs (:require [ow.logging.clojure :as clj]
+     :cljs (:require [ow.logging.core :as c]
+                     [ow.logging.clojure :as clj]
                      [ow.logging.log :as l]
                      [ow.logging.meta :as mt])))
 
@@ -77,7 +81,7 @@
 (defmacro with-logging-info
   "Sets the current logging info to logging-info."
   [logging-info & body]
-  `(cljm/with-logging-info ~logging-info ~@body))
+  `(cm/with-logging-info ~logging-info ~@body))
 
 (defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
