@@ -2,9 +2,9 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  #?(:cljs (:require-macros [ow.logging.log :as l]))
+  #?(:cljs (:require-macros [ow.logging.log :as lm]))
   #?(:clj  (:require [ow.logging.core :as c]
-                     [ow.logging.log :as l])
+                     [ow.logging.log :as lm])
      :cljs (:require [ow.logging.core :as c])))
 
 (defn-clj lhs-aliases [args]
@@ -50,7 +50,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(fn-clj ~name [~@lhs]
-             (l/with-checkpoint* ~name [~@rhs]
+             (lm/with-checkpoint* ~name [~@rhs]
                (let-clj [[~@(remove-& args)] [~@rhs]]
                  ~@body)))))
 
@@ -60,7 +60,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(defn-clj ~name [~@lhs]
-       (l/with-checkpoint* ~name [~@rhs]
+       (lm/with-checkpoint* ~name [~@rhs]
          (let-clj [[~@(remove-& args)] [~@rhs]]
            ~@body)))))
 

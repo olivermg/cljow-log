@@ -2,22 +2,28 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  #?(:cljs (:require-macros [ow.logging.clojure :as clj]))
-  #?(:clj  (:require [ow.logging.log :as l]
-                     [ow.logging.clojure :as clj]
-                     [ow.logging.meta :as mt])
-     :cljs (:require [ow.logging.log :as l]
+  #?(:cljs (:require-macros [ow.logging.clojure :as cljm]
+                            [ow.logging.log :as lm]
+                            [ow.logging.meta :as mtm]))
+  #?(:clj  (:require [ow.logging.clojure :as clj]
+                     [ow.logging.clojure :as cljm]
+                     [ow.logging.log :as l]
+                     [ow.logging.log :as lm]
+                     [ow.logging.meta :as mt]
+                     [ow.logging.meta :as mtm])
+     :cljs (:require [ow.logging.clojure :as clj]
+                     [ow.logging.log :as l]
                      [ow.logging.meta :as mt])))
 
 (defmacro with-checkpoint
   "Adds a logging checkpoint."
   [name & body]
-  `(l/with-checkpoint ~name ~@body))
+  `(lm/with-checkpoint ~name ~@body))
 
 (defmacro with-data
   "Adds user data into the current logging info, so that it will be available in subsequent log invocations."
   [data & body]
-  `(l/with-data ~data ~@body))
+  `(lm/with-data ~data ~@body))
 
 (defn-clj get-checkpoints
   "Returns the current logging checkpoints."
@@ -66,20 +72,20 @@
 (defmacro with-logging-info
   "Sets the current logging info to logging-info."
   [logging-info & body]
-  `(mt/with-logging-info ~logging-info ~@body))
+  `(mtm/with-logging-info ~logging-info ~@body))
 
 (defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
   [name [& args] & body]
-  `(clj/fn ~name [~@args] ~@body))
+  `(cljm/fn ~name [~@args] ~@body))
 
 (defmacro defn
   "Same as clojure.core/defn, but also adds a logging checkpoint upon invocation of the defn."
   [name [& args] & body]
-  `(clj/defn ~name [~@args] ~@body))
+  `(cljm/defn ~name [~@args] ~@body))
 
 (defmacro let
   "Like clojure.core/let, but also sets the current logging info to
   potential logging infos that might be attached to the given values."
   [[& bindings] & body]
-  `(clj/let [~@bindings] ~@body))
+  `(cljm/let [~@bindings] ~@body))
