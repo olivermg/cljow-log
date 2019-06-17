@@ -12,12 +12,12 @@
 (defmacro with-checkpoint
   "Adds a logging checkpoint."
   [name & body]
-  `(mm/with-checkpoint ~name ~@body))
+  `(l/with-checkpoint ~name ~@body))
 
 (defmacro with-data
   "Adds user data into the current logging info, so that it will be available in subsequent log invocations."
   [data & body]
-  `(mm/with-data ~data ~@body))
+  `(l/with-data ~data ~@body))
 
 (defn-clj get-checkpoints
   "Returns the current logging checkpoints."
@@ -46,7 +46,7 @@
 (defn-clj warn [msg & [data]]
   (l/warn msg data))
 
-(defn-clj error [msg & data]
+(defn-clj error [msg & [data]]
   (l/error msg data))
 
 (defn-clj fatal [msg & [data]]

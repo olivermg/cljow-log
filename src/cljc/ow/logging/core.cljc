@@ -14,7 +14,6 @@
 
 (defn current-ste-info []
   #?(:clj (let [st (some-> (Throwable.) .getStackTrace seq)
-                _ (clojure.pprint/pprint st)
                 ste (loop [[ste & st] st]
                       (let [classname (.getClassName ste)]
                         (if (or (s/starts-with? classname "ow.logging")
