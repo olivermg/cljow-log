@@ -76,5 +76,5 @@
                ~@(mapcat (fn-clj [[sym value] alias]
                                  `[~sym ~alias])
                          bindings rhs)]
-       (binding [c/+logging-info+ (apply c/merge-logging-infos (list ~@rhs c/+logging-info+))]
+       (c/with-logging-info (apply c/merge-logging-infos (list ~@rhs (c/logging-info)))
          ~@body))))

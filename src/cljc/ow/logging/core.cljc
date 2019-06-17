@@ -32,20 +32,28 @@
              :ns   ns
              :time (java.util.Date.)})
 
-     :cljs (letfn [(dissect-location [v]
-                     (some-> (re-find #"at[\s]+([^\s]+)\$([^\s]+)[\s]+.*\(([^\(\s]+):([0-9]+):[0-9]+\)" v)
-                             rest))
+     :cljs (letfn [(dissect [ste]
+                     (some->> ste
+                              (re-find #"at[\s]+([^\s]+)\$([^\s]+)[\s]+.*\(([^\(\s]+):([0-9]+):[0-9]+\)")
+                              rest))
 
-                   (is-logfile? [[ns fn file line]]
-                     (s/starts-with? file js/__filename))]
+                   (is-system? [ns]
+                     (or (s/starts-with? ns "ow$logging")
+                         #_(s/starts-with? ns "figwheel$")
+                         #_(s/starts-with? ns "cljs$")
+                         #_(s/starts-with? ns "Object.cljs$")
+                         #_(s/starts-with? ns "Function.cljs$")))]
 
-             (let [st       (some-> (js/Error.) (.-stack) (s/split "\n"))
-                   [ns fn file line] (or (some->> st
-                                                  (map dissect-location)
-                                                  (remove nil?)
-                                                  (remove is-logfile?)
-                                                  first)
-                                         ["?" "?" "?" "?"])]
+             (let [st  (some-> (js/Error.) (.-stack) (s/split "\n"))
+                   _ (println st)
+                   [ns fn file line :as ste] (or (loop [[ste & st] st]
+                                                   (when ste
+                                                     (if-let [[ns fn file line :as dissected] (dissect ste)]
+                                                       (if-not (is-system? ns)
+                                                         dissected
+                                                         (recur st))
+                                                       (recur st))))
+                                                 ["?" "?" "?" "?"])]
                {:file file
                 :fn   fn
                 :line line
@@ -65,3 +73,10 @@
 
 (defn merge-logging-infos [& logging-infos]
   (reduce merge-logging-info logging-infos))
+
+(defn logging-info []
+  +logging-info+)
+
+(defmacro with-logging-info [logging-info & body]
+  `(binding [c/+logging-info+ (c/merge-logging-info ~logging-info c/+logging-info+)]
+     ~@body))

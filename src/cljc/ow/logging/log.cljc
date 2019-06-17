@@ -14,7 +14,7 @@
 ;;;   their unqualified names.
 
 (defmacro with-checkpoint* [name [& args] & body]
-  `(binding [c/+logging-info+ (update c/+logging-info+ :checkpoints conj (c/make-checkpoint* '~name ~@args))]
+  `(c/with-logging-info (update (c/logging-info) :checkpoints conj (c/make-checkpoint* '~name ~@args))
      ~@body))
 
 (defmacro with-checkpoint [name & body]
@@ -22,20 +22,20 @@
      ~@body))
 
 (defmacro with-data [data & body]
-  `(binding [c/+logging-info+ (update c/+logging-info+ :data merge (c/pr-str-map-vals ~data))]
+  `(c/with-logging-info (update (c/logging-info) :data merge (c/pr-str-map-vals ~data))
      ~@body))
 
 
 
 (defn get-checkpoints []
-  (get-in c/+logging-info+ [:trace]))
+  (get-in (c/logging-info) [:trace]))
 
 (defn get-checkpoints-root []
   (get (get-checkpoints) 0))
 
 (defn log-data [level msg & [data]]
   (with-checkpoint ::log
-    (-> c/+logging-info+
+    (-> (c/logging-info)
         (assoc :level  level
                :msg    msg)
         (update :data merge
