@@ -35,6 +35,11 @@
   []
   (l/get-checkpoints-root))
 
+(defn-clj log-data
+  "Returns current logging data augmented with msg and data."
+  [level msg & [data]]
+  (l/log-data level msg data))
+
 (defn-clj log
   "Prints a log message based on the current logging info."
   [level msg & [data]]
