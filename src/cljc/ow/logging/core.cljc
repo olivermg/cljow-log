@@ -6,6 +6,8 @@
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
                 :cljs (.. js/Number -MAX_SAFE_INTEGER)))
 
+#?(:cljs (set! (.-stackTraceLimit js/Error) 50))
+
 (defn pr-str-map-vals [m]
   (->> m
        (map (fn [[k v]]
@@ -30,12 +32,25 @@
              :ns   ns
              :time (java.util.Date.)})
 
-     :cljs (let [st (some-> (js/Error.) (.-stack) (s/split "\n"))]
-             {:file :tdb
-              :fn   :tbd
-              :line :tbd
-              :ns   :tbd
-              :time (js/Date.)})))
+     :cljs (letfn [(dissect-location [v]
+                     (some-> (re-find #"at[\s]+([^\s]+)\$([^\s]+)[\s]+.*\(([^\(\s]+):([0-9]+):[0-9]+\)" v)
+                             rest))
+
+                   (is-logfile? [[ns fn file line]]
+                     (s/starts-with? file js/__filename))]
+
+             (let [st       (some-> (js/Error.) (.-stack) (s/split "\n"))
+                   [ns fn file line] (or (some->> st
+                                                  (map dissect-location)
+                                                  (remove nil?)
+                                                  (remove is-logfile?)
+                                                  first)
+                                         ["?" "?" "?" "?"])]
+               {:file file
+                :fn   fn
+                :line line
+                :ns   ns
+                :time (js/Date.)}))))
 
 (defn make-checkpoint* [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
   (-> {:id   (rand-int MAX_INT)
