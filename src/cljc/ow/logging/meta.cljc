@@ -6,7 +6,7 @@
 (defn attach [obj]
   #?(:clj  (if (instance? IObj obj)
              (with-meta obj
-               {::logging-info (c/logging-info)})
+               {::logging-info (c/current-logging-info)})
              (do (l/info "cannot attach log information to obj not implementing IObj" {:obj obj})
                  obj))
      :cljs {}))
