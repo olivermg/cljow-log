@@ -72,66 +72,7 @@
 
 
 
-#_(do (require '[clojure.core.async :as a])
-    (let-clj [foo1r (a/chan)
-              foo1a (a/chan)
-              foo2r (a/chan)
-              foo2a (a/chan)]
 
-      (a/go-loop [x (a/<! foo1r)]
-        (when-not (nil? x)
-          (let [[x] x]
-            (with-checkpoint inside-foo1
-              (warn foo11 "foo1-1" x)
-              (Thread/sleep (rand-int 1000))
-              (info foo12 "foo1-2" x)
-              (a/put! foo1a (->> x inc vector attach))))
-          (recur (a/<! foo1r))))
-
-      (a/go-loop [x (a/<! foo2r)]
-        (when-not (nil? x)
-          (let [x x]
-            (warn foo21 "foo2-1" x)
-            (Thread/sleep (rand-int 1000))
-            (info foo22 "foo2-2" x)
-            (a/put! foo2a (->> x inc attach)))
-          (recur (a/<! foo2r))))
-
-      (defn bar1 [x]
-        (warn bar11 "bar1-1" x)
-        (let-clj [r (doall (pvalues (do (a/put! foo1r (->> x inc vector attach))
-                                        (let [[res] (a/<!! foo1a)]
-                                          res))
-                                    (do (a/put! foo2r (->> x inc attach))
-                                        (let [res (a/<!! foo2a)]
-                                          res))))]
-          (info bar12 "bar1-2" x)
-          r))
-
-      (defn bar2 [x {:keys [d1] :as mmm} [d2 :as vvv] & {:keys [xyz]}]
-        (warn bar21 "bar2-1" x)
-        (let-clj [r (doall (pvalues (do (a/put! foo1r (->> x inc vector attach))
-                                        (let [[res] (a/<!! foo1a)]
-                                          res))
-                                    (do (a/put! foo2r (->> x inc attach))
-                                        (let [res (a/<!! foo2a)]
-                                          res))))]
-          (info bar22 "bar2-2" x)
-          r))
-
-      (defn baz [x]
-        (warn baz1 "baz-1" x)
-        (with-data {:user "user123"}
-          (pvalues (bar1 (inc x))
-                   (bar2 (inc x) nil nil)))
-        (info baz2 "baz-2" x))
-
-      (baz 123)
-      (Thread/sleep 3000)
-      (a/close! foo2a)
-      (a/close! foo2r)
-      (a/close! foo1a)
-      (a/close! foo1r)))
 
 #_(defn foo [a b {:keys [c d] :as m} [e f :as v] & [g h]]
   [a b c d e f g h])
