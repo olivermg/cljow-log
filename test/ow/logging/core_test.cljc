@@ -3,6 +3,10 @@
             [clojure.core.async :as a]
             [ow.logging.api.alpha :as l]))
 
+(deftest log-data
+  (let [ld (l/log-data :trace "msg" {:x 123})]
+    (is (= (count (:checkpoints ld)) 1))))
+
 (deftest test1
   (let [foo1r (a/chan)
         foo1a (a/chan)
