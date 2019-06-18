@@ -1,11 +1,12 @@
 (ns ow.logging.core
   (:require [clojure.string :as s]))
 
-(def ^:dynamic +logging-info+ {:checkpoints []})
-
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
                 :cljs (.. js/Number -MAX_SAFE_INTEGER)))
 
+#?(:clj  (def ^:dynamic +logging-info+ {:checkpoints []}))
+
+#?(:cljs (def domain (js/require "domain")))
 #?(:cljs (set! (.-stackTraceLimit js/Error) 50))
 
 (defn pr-str-map-vals [m]
@@ -74,9 +75,42 @@
 (defn merge-logging-infos [& logging-infos]
   (reduce merge-logging-info logging-infos))
 
-(defn logging-info []
-  +logging-info+)
+(defn current-logging-info []
+  #?(:clj  +logging-info+
+     :cljs (let [d (.-active domain)]
+             (.-logging_info d))))
+
+
+
+(defn initialize-logging! [cb]
+  (do #?(:clj  (cb)
+         :cljs (doto (.create domain)
+                 (.run cb)))
+      nil))
+
+(defmacro with-initialized-logging [& body]
+  `(initialize-logging!
+     (fn [] ~@body)))
+
+(defn create-instance! [cb]
+  #?(:clj  (cb)
+     :cljs (let [d (doto (.create domain)
+                     (.enter))]
+             (set! (.-logging_info d) {:checkpoints []})
+             (cb))))
+
+(defmacro with-instance [& body]
+  `(create-instance!
+     (fn [] ~@body)))
+
+(defn inject-logging-info! [logging-info cb]
+  (let [logging-info (merge-logging-info logging-info (current-logging-info))]
+    #?(:clj  (binding [+logging-info+ logging-info]
+               (cb))
+       :cljs (let [d (.-active domain)]
+               (set! (.-logging_info d) logging-info)
+               (cb)))))
 
 (defmacro with-logging-info [logging-info & body]
-  `(binding [+logging-info+ (merge-logging-info ~logging-info +logging-info+)]
-     ~@body))
+  `(inject-logging-info! ~logging-info
+     (fn [] ~@body)))
