@@ -78,6 +78,16 @@
   [obj]
   (mt/detach obj))
 
+(defmacro with-initialized-logging
+  "Initializes logging and runs body within its scope."
+  [& body]
+  `(cm/with-initialized-logging ~@body))
+
+(defmacro with-instance
+  "Encapsulates a single logging instance (e.g. a request)."
+  [& body]
+  `(cm/with-instance ~@body))
+
 (defmacro with-logging-info
   "Sets the current logging info to logging-info."
   [logging-info & body]
