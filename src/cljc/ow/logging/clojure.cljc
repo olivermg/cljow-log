@@ -2,9 +2,9 @@
   (:refer-clojure :rename {defn defn-clj
                            fn   fn-clj
                            let  let-clj})
-  #?(:cljs (:require-macros [ow.logging.log :as lm]))
+  #?(:cljs (:require-macros [ow.logging.core :as cm]))
   #?(:clj  (:require [ow.logging.core :as c]
-                     [ow.logging.log :as lm])
+                     [ow.logging.core :as cm])
      :cljs (:require [ow.logging.core :as c])))
 
 (defn-clj lhs-aliases [args]
@@ -50,7 +50,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(fn-clj ~name [~@lhs]
-             (lm/with-checkpoint* ~name [~@rhs]
+             (cm/with-checkpoint* ~name [~@rhs]
                (let-clj [[~@(remove-& args)] [~@rhs]]
                  ~@body)))))
 
@@ -60,7 +60,7 @@
   (let-clj [lhs (lhs-aliases args)
             rhs (remove-& lhs)]  ;; simplify e.g. destructuring
     `(defn-clj ~name [~@lhs]
-       (lm/with-checkpoint* ~name [~@rhs]
+       (cm/with-checkpoint* ~name [~@rhs]
          (let-clj [[~@(remove-& args)] [~@rhs]]
            ~@body)))))
 
@@ -76,5 +76,5 @@
                ~@(mapcat (fn-clj [[sym value] alias]
                                  `[~sym ~alias])
                          bindings rhs)]
-       (c/with-logging-info (apply c/merge-logging-infos (list ~@rhs (c/current-logging-info)))
+       (cm/with-logging-info (apply c/merge-historical-logging-infos (list ~@rhs (c/current-logging-info)))
          ~@body))))

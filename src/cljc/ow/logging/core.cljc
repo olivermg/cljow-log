@@ -1,4 +1,6 @@
 (ns ow.logging.core
+  #?(:cljs (:require-macros [ow.logging.core :refer [with-initialized-logging with-instance with-historical-logging-info
+                                                     with-logging-info with-checkpoint* with-checkpoint with-data]]))
   (:require [clojure.string :as s]))
 
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
@@ -40,13 +42,15 @@
 
                    (is-system? [ns]
                      (or (s/starts-with? ns "ow$logging")
-                         #_(s/starts-with? ns "figwheel$")
-                         #_(s/starts-with? ns "cljs$")
+                         (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" ns)
+                         (re-matches #"[^\$]+" ns)
+                         (s/starts-with? ns "figwheel$")
+                         (s/starts-with? ns "cljs$core")
                          #_(s/starts-with? ns "Object.cljs$")
                          #_(s/starts-with? ns "Function.cljs$")))]
 
              (let [st  (some-> (js/Error.) (.-stack) (s/split "\n"))
-                   _ (println st)
+                   ;;;_ (doseq [s st] (println s))
                    [ns fn file line :as ste] (or (loop [[ste & st] st]
                                                    (when ste
                                                      (if-let [[ns fn file line :as dissected] (dissect ste)]
@@ -68,19 +72,45 @@
       (into  [(when-not (empty? args)
                 [:args (map pr-str args)])])))
 
-(defn merge-logging-info [logging-info1 logging-info2]
-  (update logging-info2 :checkpoints #(-> (concat (:checkpoints logging-info1) %)
-                                          vec)))
+(defn append-checkpoints [logging-info checkpoints]
+  (update logging-info :checkpoints #(-> (concat % checkpoints) vec)))
 
-(defn merge-logging-infos [& logging-infos]
-  (reduce merge-logging-info logging-infos))
+(defn append-checkpoint [logging-info checkpoint]
+  (update logging-info :checkpoints conj checkpoint))
+
+(defn prepend-checkpoints [logging-info checkpoints]
+  (update logging-info :checkpoints #(-> (concat checkpoints %) vec)))
+
+(defn prepend-checkpoint [logging-info checkpoint]
+  (prepend-checkpoints logging-info [checkpoint]))
+
+(defn merge-historical-logging-info [logging-info1 logging-info2]
+  (prepend-checkpoints logging-info2 (:checkpoints logging-info1)))
+
+(defn merge-historical-logging-infos [& logging-infos]
+  (reduce merge-historical-logging-info logging-infos))
 
 (defn current-logging-info []
   #?(:clj  +logging-info+
      :cljs (let [d (.-active domain)]
              (.-logging_info d))))
 
+(defn get-checkpoints []
+  (get-in (current-logging-info) [:checkpoints]))
 
+(defn get-root-checkpoint []
+  (get (get-checkpoints) 0))
+
+
+
+;;; NOTE: macros always get compiled in java/jvm, even for cljs code, because they are compile time citizens.
+;;;   this implies that we need to define them in .clj or .cljc files, not in .cljs files.
+;;;   and we need to require them via :require-macros in cljs code.
+;;;
+;;;   you can define and use macros in one single cljc file in cljs by declaring in the ns expr sth like:
+;;;   (:require-macros [macro-ns :refer [macro1 macro2])
+;;;   this way it even works seamlessly in clj too, as in clj you can directly refer to the macros by
+;;;   their unqualified names.
 
 (defn initialize-logging! [cb]
   (do #?(:clj  (cb)
@@ -104,13 +134,31 @@
      (fn [] ~@body)))
 
 (defn inject-logging-info! [logging-info cb]
-  (let [logging-info (merge-logging-info logging-info (current-logging-info))]
-    #?(:clj  (binding [+logging-info+ logging-info]
-               (cb))
-       :cljs (let [d (.-active domain)]
-               (set! (.-logging_info d) logging-info)
-               (cb)))))
+  #?(:clj  (binding [+logging-info+ logging-info]
+             (cb))
+     :cljs (let [d                 (.-active domain)
+                 prev-logging-info (.-logging_info d)
+                 _                 (set! (.-logging_info d) logging-info)
+                 result            (cb)]
+             (set! (.-logging_info d) prev-logging-info)
+             result)))
 
 (defmacro with-logging-info [logging-info & body]
   `(inject-logging-info! ~logging-info
      (fn [] ~@body)))
+
+(defmacro with-historical-logging-info [logging-info & body]
+  `(inject-logging-info! (merge-historical-logging-info ~logging-info (current-logging-info))
+     (fn [] ~@body)))
+
+(defmacro with-checkpoint* [name [& args] & body]
+  `(with-logging-info (append-checkpoint (current-logging-info) (make-checkpoint* '~name ~@args))
+     ~@body))
+
+(defmacro with-checkpoint [name & body]
+  `(with-checkpoint* ~name []
+     ~@body))
+
+(defmacro with-data [data & body]
+  `(with-logging-info (update (current-logging-info) :data merge (pr-str-map-vals ~data))
+     ~@body))

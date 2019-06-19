@@ -22,22 +22,22 @@
 (defmacro with-checkpoint
   "Adds a logging checkpoint."
   [name & body]
-  `(lm/with-checkpoint ~name ~@body))
+  `(cm/with-checkpoint ~name ~@body))
 
 (defmacro with-data
   "Adds user data into the current logging info, so that it will be available in subsequent log invocations."
   [data & body]
-  `(lm/with-data ~data ~@body))
+  `(cm/with-data ~data ~@body))
 
 (defn-clj get-checkpoints
   "Returns the current logging checkpoints."
   []
-  (l/get-checkpoints))
+  (c/get-checkpoints))
 
-(defn-clj get-checkpoints-root
+(defn-clj get-root-checkpoint
   "Returns the root/first/topmost logging checkpoint."
   []
-  (l/get-checkpoints-root))
+  (c/get-root-checkpoint))
 
 (defn-clj log-data
   "Returns current logging data augmented with msg and data."
@@ -92,6 +92,12 @@
   "Sets the current logging info to logging-info."
   [logging-info & body]
   `(cm/with-logging-info ~logging-info ~@body))
+
+(defmacro with-historical-logging-info
+  "Merges given logging-info with current logging-info. Assumes that given logging-info is 'older'
+  than the current one and thus prepends the former's checkpoints to the latter's."
+  [logging-info & body]
+  `(cm/with-historical-logging-info ~logging-info ~@body))
 
 (defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."

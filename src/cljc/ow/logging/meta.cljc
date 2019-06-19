@@ -9,7 +9,8 @@
                {::logging-info (c/current-logging-info)})
              (do (l/info "cannot attach log information to obj not implementing IObj" {:obj obj})
                  obj))
-     :cljs {}))
+     :cljs (with-meta obj
+             {::logging-info (c/current-logging-info)})))
 
 (defn detach [obj]
   (some-> obj meta ::logging-info))

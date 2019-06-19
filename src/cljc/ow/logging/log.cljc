@@ -1,40 +1,12 @@
 (ns ow.logging.log
-  #?(:cljs (:require-macros [ow.logging.log :refer [with-checkpoint* with-checkpoint with-data]]))
+  #?(:cljs (:require-macros [ow.logging.core :as cm]))
   #?(:clj  (:require #_[clojure.tools.logging :as log]
-                     [ow.logging.core :as c])
+                     [ow.logging.core :as c]
+                     [ow.logging.core :as cm])
      :cljs (:require [ow.logging.core :as c])))
 
-;;; NOTE: macros always get compiled in java/jvm, even for cljs code, because they are compile time citizens.
-;;;   this implies that we need to define them in .clj or .cljc files, not in .cljs files.
-;;;   and we need to require them via :require-macros in cljs code.
-;;;
-;;;   you can define and use macros in one single cljc file in cljs by declaring in the ns expr sth like:
-;;;   (:require-macros [macro-ns :refer [macro1 macro2])
-;;;   this way it even works seamlessly in clj too, as in clj you can directly refer to the macros by
-;;;   their unqualified names.
-
-(defmacro with-checkpoint* [name [& args] & body]
-  `(c/with-logging-info (update (c/current-logging-info) :checkpoints conj (c/make-checkpoint* '~name ~@args))
-     ~@body))
-
-(defmacro with-checkpoint [name & body]
-  `(with-checkpoint* ~name []
-     ~@body))
-
-(defmacro with-data [data & body]
-  `(c/with-logging-info (update (c/current-logging-info) :data merge (c/pr-str-map-vals ~data))
-     ~@body))
-
-
-
-(defn get-checkpoints []
-  (get-in (c/current-logging-info) [:checkpoints]))
-
-(defn get-checkpoints-root []
-  (get (get-checkpoints) 0))
-
 (defn log-data [level msg & [data]]
-  (with-checkpoint ::log
+  (cm/with-checkpoint ::log
     (-> (c/current-logging-info)
         (assoc :level  level
                :msg    msg)
@@ -69,10 +41,3 @@
 
 (defn fatal [msg & [data]]
   (log :fatal msg data))
-
-
-
-
-
-#_(defn foo [a b {:keys [c d] :as m} [e f :as v] & [g h]]
-  [a b c d e f g h])
