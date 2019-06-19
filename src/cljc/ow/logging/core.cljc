@@ -18,17 +18,22 @@
        (into {})))
 
 (defn current-ste-info []
-  #?(:clj (let [st (some-> (Throwable.) .getStackTrace seq)
-                ste (loop [[ste & st] st]
-                      (let [classname (.getClassName ste)]
-                        (if (or (s/starts-with? classname "ow.logging")
-                                (s/starts-with? classname "clojure"))
-                          (recur st)
-                          ste)))
-                [ns fn file line] (if ste
-                                    (concat (s/split (.getClassName ste) #"\$" 2)
-                                            [(.getFileName ste) (.getLineNumber ste)])
-                                    ["?" "?" "?" "?"])]
+  #?(:clj (let [st                (some-> (Throwable.) .getStackTrace seq)
+                ste               (loop [[ste & st] st]
+                                    (let [classname (.getClassName ste)]
+                                      (if (or (s/starts-with? classname "ow.logging")
+                                              (s/starts-with? classname "clojure"))
+                                        (recur st)
+                                        ste)))
+                [ns fn]           (when ste
+                                    (s/split (.getClassName ste) #"\$" 2))
+                fn                (when fn
+                                    (some->> (s/split fn #"\$")
+                                             (remove #(s/starts-with? % "__hide"))
+                                             (s/join "$")))
+                [file line]       (when ste
+                                    [(.getFileName ste) (.getLineNumber ste)])
+                [ns fn file line] [(or ns "?") (or fn "?") (or file "?") (or line "?")]]]
             {:file file
              :fn   fn
              :line line
@@ -42,8 +47,8 @@
 
                    (is-system? [ns]
                      (or (s/starts-with? ns "ow$logging")
-                         (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" ns)
                          (re-matches #"[^\$]+" ns)
+                         (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" ns)
                          (s/starts-with? ns "figwheel$")
                          (s/starts-with? ns "cljs$core")
                          #_(s/starts-with? ns "Object.cljs$")
@@ -120,7 +125,7 @@
 
 (defmacro with-initialized-logging [& body]
   `(initialize-logging!
-     (fn [] ~@body)))
+     (fn __hide# [] ~@body)))
 
 (defn create-instance! [cb]
   #?(:clj  (cb)
@@ -131,7 +136,7 @@
 
 (defmacro with-instance [& body]
   `(create-instance!
-     (fn [] ~@body)))
+     (fn __hide# [] ~@body)))
 
 (defn inject-logging-info! [logging-info cb]
   #?(:clj  (binding [+logging-info+ logging-info]
@@ -145,11 +150,11 @@
 
 (defmacro with-logging-info [logging-info & body]
   `(inject-logging-info! ~logging-info
-     (fn [] ~@body)))
+     (fn __hide# [] ~@body)))
 
 (defmacro with-historical-logging-info [logging-info & body]
   `(inject-logging-info! (merge-historical-logging-info ~logging-info (current-logging-info))
-     (fn [] ~@body)))
+     (fn __hide# [] ~@body)))
 
 (defmacro with-checkpoint* [name [& args] & body]
   `(with-logging-info (append-checkpoint (current-logging-info) (make-checkpoint* '~name ~@args))
