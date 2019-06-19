@@ -33,7 +33,7 @@
                                              (s/join "$")))
                 [file line]       (when ste
                                     [(.getFileName ste) (.getLineNumber ste)])
-                [ns fn file line] [(or ns "?") (or fn "?") (or file "?") (or line "?")]]]
+                [ns fn file line] [(or ns "?") (or fn "?") (or file "?") (or line "?")]]
             {:file file
              :fn   fn
              :line line
