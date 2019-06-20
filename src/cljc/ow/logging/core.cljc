@@ -172,3 +172,39 @@
 (defmacro with-data [data & body]
   `(with-logging-info (update (current-logging-info) :data merge (pr-str-map-vals ~data))
      ~@body))
+
+
+
+#_(let [domain (js/require "domain")]
+  (letfn [(new-domain []
+            (let [active-domain (.. domain -active)
+                  old-data (when active-domain
+                             (.. active-domain -data))]
+              (doto (.create domain)
+                (.enter)
+                (when old-data
+                  (set! (.. domain -active -data) old-data)))))]
+    (new-domain)
+    (set! (.. domain -active -data)
+          {:foo 123})
+    (js/setTimeout (fn []
+                     (new-domain)
+                     (set! (.. domain -active -data)
+                           (assoc (.. domain -active -data)
+                                  :async1 111))
+                     (println "async11" (.. domain -active -data))
+                     (js/setTimeout (fn []
+                                      (new-domain)
+                                      (println "async12" (.. domain -active -data)))
+                                    1000)
+                     (.exit (.. domain -active)))
+                   1000)
+    (js/setTimeout (fn []
+                     (new-domain)
+                     (set! (.. domain -active -data)
+                           (assoc (.. domain -active -data)
+                                  :async2 222))
+                     (println "async2" (.. domain -active -data))
+                     (.exit (.. domain -active)))
+                   1500)
+    (.exit (.. domain -active))))
