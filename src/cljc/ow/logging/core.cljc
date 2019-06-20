@@ -41,34 +41,38 @@
              :time (java.util.Date.)})
 
      :cljs (letfn [(dissect [ste]
-                     (some->> ste
-                              (re-find #"at[\s]+([^\s]+)\$([^\s]+)[\s]+.*\(([^\(\s]+):([0-9]+):[0-9]+\)")
-                              rest))
+                     (when-let [[location file line] (some->> ste
+                                                              (re-find #"at[\s]+([^\s]+)[\s]+.*\(([^\(\s]+):([0-9]+):[0-9]+\)")
+                                                              rest)]
+                       (let [location (or (some->> location
+                                                   (re-find #"(.+?)\$___hide.*")
+                                                   second)
+                                          location)]
+                         [location file line])))
 
-                   (is-system? [ns]
-                     (or (s/starts-with? ns "ow$logging")
-                         (re-matches #"[^\$]+" ns)
-                         (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" ns)
-                         (s/starts-with? ns "figwheel$")
-                         (s/starts-with? ns "cljs$core")
-                         #_(s/starts-with? ns "Object.cljs$")
-                         #_(s/starts-with? ns "Function.cljs$")))]
+                   (is-system? [location]
+                     (or (s/starts-with? location "ow$logging")
+                         (re-matches #"[^\$]+" location)
+                         (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" location)
+                         (s/starts-with? location "figwheel$")
+                         (s/starts-with? location "cljs$core")
+                         #_(s/starts-with? location "Object.cljs$")
+                         #_(s/starts-with? location "Function.cljs$")))]
 
              (let [st  (some-> (js/Error.) (.-stack) (s/split "\n"))
-                   ;;;_ (doseq [s st] (println s))
-                   [ns fn file line :as ste] (or (loop [[ste & st] st]
-                                                   (when ste
-                                                     (if-let [[ns fn file line :as dissected] (dissect ste)]
-                                                       (if-not (is-system? ns)
-                                                         dissected
-                                                         (recur st))
-                                                       (recur st))))
-                                                 ["?" "?" "?" "?"])]
-               {:file file
-                :fn   fn
-                :line line
-                :ns   ns
-                :time (js/Date.)}))))
+                   [location file line :as ste] (or (loop [[ste & st] st]
+                                                      (when ste
+                                                        (if-let [[location file line :as dissected] (dissect ste)]
+                                                          (if-not (is-system? location)
+                                                            dissected
+                                                            (recur st))
+                                                          (recur st))))
+                                                    ["?" "?" "?" "?"])]
+               {:file     file
+                :fn       location
+                :line     line
+                :ns       location
+                :time     (js/Date.)}))))
 
 (defn make-checkpoint* [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
   (-> {:id   (rand-int MAX_INT)
@@ -89,6 +93,7 @@
 (defn prepend-checkpoint [logging-info checkpoint]
   (prepend-checkpoints logging-info [checkpoint]))
 
+;;; TODO: also merge current data, not just the checkpoints:
 (defn merge-historical-logging-info [logging-info1 logging-info2]
   (prepend-checkpoints logging-info2 (:checkpoints logging-info1)))
 
