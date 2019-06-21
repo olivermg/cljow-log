@@ -7,7 +7,7 @@
                      [ow.logging.core :as cm])
      :cljs (:require [ow.logging.core :as c])))
 
-(defn-clj lhs-aliases [args]
+#_(defn-clj lhs-aliases [args]
   (letfn [(map-name [m]
             (str (or (reduce (fn-clj [name [k v]]
                                      (if (= k :as)
@@ -39,12 +39,12 @@
 
     (map alias-arg args)))
 
-(defn-clj remove-& [lhs-aliases]
+#_(defn-clj remove-& [lhs-aliases]
   (remove #(= % '&) lhs-aliases))
 
 
 
-(defmacro fn
+#_(defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
   [name [& args] & body]
   (let-clj [lhs (lhs-aliases args)
@@ -54,7 +54,7 @@
                (let-clj [[~@(remove-& args)] [~@rhs]]
                  ~@body)))))
 
-(defmacro defn
+#_(defmacro defn
   "Same as clojure.core/defn, but also adds a logging checkpoint upon invocation of the defn."
   [name [& args] & body]
   (let-clj [lhs (lhs-aliases args)
@@ -64,7 +64,7 @@
          (let-clj [[~@(remove-& args)] [~@rhs]]
            ~@body)))))
 
-(defmacro let
+#_(defmacro let
   "Like clojure.core/let, but also sets the current logging info to
   potential logging info maps that might be attached to the given values."
   [[& bindings] & body]

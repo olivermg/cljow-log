@@ -1,6 +1,7 @@
 (ns ow.logging.core
   #?(:cljs (:require-macros [ow.logging.core :refer [with-initialized-logging with-instance with-historical-logging-info
-                                                     with-logging-info with-checkpoint* with-checkpoint with-data]]))
+                                                     with-logging-info with-checkpoint* with-checkpoint with-data
+                                                     with-logging with-appended with-prepended with-replaced]]))
   (:require [clojure.string :as s]))
 
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
@@ -74,36 +75,37 @@
                 :ns       location
                 :time     (js/Date.)}))))
 
-(defn make-checkpoint* [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
+(defn make-checkpoint [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
   (-> {:id   (rand-int MAX_INT)
        :name name}
       (merge (current-ste-info))
       (into  [(when-not (empty? args)
                 [:args (map pr-str args)])])))
 
-(defn append-checkpoints [logging-info checkpoints]
+#_(defn append-checkpoints [logging-info checkpoints]
   (update logging-info :checkpoints #(-> (concat % checkpoints) vec)))
 
-(defn append-checkpoint [logging-info checkpoint]
+#_(defn append-checkpoint [logging-info checkpoint]
   (update logging-info :checkpoints conj checkpoint))
 
-(defn prepend-checkpoints [logging-info checkpoints]
+#_(defn prepend-checkpoints [logging-info checkpoints]
   (update logging-info :checkpoints #(-> (concat checkpoints %) vec)))
 
-(defn prepend-checkpoint [logging-info checkpoint]
+#_(defn prepend-checkpoint [logging-info checkpoint]
   (prepend-checkpoints logging-info [checkpoint]))
 
 ;;; TODO: also merge current data, not just the checkpoints:
-(defn merge-historical-logging-info [logging-info1 logging-info2]
+#_(defn merge-historical-logging-info [logging-info1 logging-info2]
   (prepend-checkpoints logging-info2 (:checkpoints logging-info1)))
 
-(defn merge-historical-logging-infos [& logging-infos]
+#_(defn merge-historical-logging-infos [& logging-infos]
   (reduce merge-historical-logging-info logging-infos))
 
 (defn current-logging-info []
   #?(:clj  +logging-info+
-     :cljs (let [d (.-active domain)]
-             (.-logging_info d))))
+     :cljs (or (some-> (.-active domain)
+                       (.-logging-info))
+               {:checkpoints []})))
 
 (defn get-checkpoints []
   (get-in (current-logging-info) [:checkpoints]))
@@ -122,28 +124,35 @@
 ;;;   this way it even works seamlessly in clj too, as in clj you can directly refer to the macros by
 ;;;   their unqualified names.
 
-(defn initialize-logging! [cb]
+#_(defn initialize-logging! [cb]
   (do #?(:clj  (cb)
          :cljs (doto (.create domain)
                  (.run cb)))
       nil))
 
-(defmacro with-initialized-logging [& body]
+#_(defmacro with-initialized-logging [& body]
   `(initialize-logging!
      (fn __hide# [] ~@body)))
 
-(defn create-instance! [cb]
+#_(defn init-logging! [cb]
   #?(:clj  (cb)
-     :cljs (let [d (doto (.create domain)
-                     (.enter))]
-             (set! (.-logging_info d) {:checkpoints []})
-             (cb))))
+     :cljs (let [prev-domain    (.-active domain)
+                 old-info       (when prev-domain
+                                  (.-logging_info prev-domain))
+                 _ (println "bbb" old-info)
+                 current-domain (doto (.create domain)
+                                  (.enter))]
+             (when old-info
+               (set! (.-logging_info current-domain) old-info))
+             (let [cb-result (cb)]
+               (.exit current-domain)
+               cb-result))))
 
-(defmacro with-instance [& body]
-  `(create-instance!
+#_(defmacro with-logging [& body]
+  `(init-logging!
      (fn __hide# [] ~@body)))
 
-(defn inject-logging-info! [logging-info cb]
+#_(defn inject-logging-info! [logging-info cb]
   #?(:clj  (binding [+logging-info+ logging-info]
              (cb))
      :cljs (let [d                 (.-active domain)
@@ -153,16 +162,50 @@
              (set! (.-logging_info d) prev-logging-info)
              result)))
 
-(defmacro with-logging-info [logging-info & body]
+(defn replace! [logging-info cb]
+  #?(:clj  (binding [+logging-info+ logging-info]
+             (cb))
+     :cljs (let [current-domain (doto (.create domain)
+                                  (.enter))]
+             (set! (.-logging_info current-domain) logging-info)
+             (let [cb-result (cb)]
+               (.exit current-domain)
+               cb-result))))
+
+(defmacro with-replaced [logging-info & body]
+  `(replace! ~logging-info
+     (fn __hide# [] ~@body)))
+
+(defn prepend! [checkpoints data cb]
+  (let [logging-info (-> (current-logging-info)
+                         (update :checkpoints #(-> (concat checkpoints %) vec))
+                         (update :data #(merge (pr-str-map-vals data) %)))]
+    (replace! logging-info cb)))
+
+(defmacro with-prepended [checkpoints data & body]
+  `(prepend! ~checkpoints ~data
+     (fn __hide# [] ~@body)))
+
+(defn append! [checkpoints data cb]
+  (let [logging-info (-> (current-logging-info)
+                         (update :checkpoints #(-> (concat % checkpoints) vec))
+                         (update :data #(merge % (pr-str-map-vals data))))]
+    (replace! logging-info cb)))
+
+(defmacro with-appended [checkpoints data & body]
+  `(append! ~checkpoints ~data
+     (fn __hide# [] ~@body)))
+
+#_(defmacro with-logging-info [logging-info & body]
   `(inject-logging-info! ~logging-info
      (fn __hide# [] ~@body)))
 
-(defmacro with-historical-logging-info [logging-info & body]
-  `(inject-logging-info! (merge-historical-logging-info ~logging-info (current-logging-info))
-     (fn __hide# [] ~@body)))
+(defmacro with-historical-logging-info [{:keys [checkpoints data] :as logging-info} & body]
+  `(with-prepended ~checkpoints ~data
+     ~@body))
 
 (defmacro with-checkpoint* [name [& args] & body]
-  `(with-logging-info (append-checkpoint (current-logging-info) (make-checkpoint* '~name ~@args))
+  `(with-appended [(make-checkpoint '~name ~@args)] {}
      ~@body))
 
 (defmacro with-checkpoint [name & body]
@@ -170,41 +213,27 @@
      ~@body))
 
 (defmacro with-data [data & body]
-  `(with-logging-info (update (current-logging-info) :data merge (pr-str-map-vals ~data))
+  `(with-appended [] ~data
      ~@body))
 
 
 
 #_(let [domain (js/require "domain")]
-  (letfn [(new-domain []
-            (let [active-domain (.. domain -active)
-                  old-data (when active-domain
-                             (.. active-domain -data))]
-              (doto (.create domain)
-                (.enter)
-                (when old-data
-                  (set! (.. domain -active -data) old-data)))))]
-    (new-domain)
-    (set! (.. domain -active -data)
-          {:foo 123})
-    (js/setTimeout (fn []
-                     (new-domain)
-                     (set! (.. domain -active -data)
-                           (assoc (.. domain -active -data)
-                                  :async1 111))
-                     (println "async11" (.. domain -active -data))
-                     (js/setTimeout (fn []
-                                      (new-domain)
-                                      (println "async12" (.. domain -active -data)))
-                                    1000)
-                     (.exit (.. domain -active)))
-                   1000)
-    (js/setTimeout (fn []
-                     (new-domain)
-                     (set! (.. domain -active -data)
-                           (assoc (.. domain -active -data)
-                                  :async2 222))
-                     (println "async2" (.. domain -active -data))
-                     (.exit (.. domain -active)))
-                   1500)
-    (.exit (.. domain -active))))
+  (with-checkpoint check1
+    (with-data {:check1 :data1}
+      (println "sync1" (.. domain -active -logging_info))
+      (js/setTimeout (fn []
+                       (with-checkpoint check11
+                         (with-data {:check11 :data11}
+                           (println "async11" (.. domain -active -logging_info))
+                           (js/setTimeout (fn []
+                                            (with-checkpoint check111
+                                              (with-data {:check111 :data111}
+                                                (println "async12" (.. domain -active -logging_info)))))
+                                          1000))))
+                     1000)
+      (js/setTimeout (fn []
+                       (with-checkpoint check12
+                         (with-data {:check12 :data12}
+                           (println "async2" (.. domain -active -logging_info)))))
+                     1500))))
