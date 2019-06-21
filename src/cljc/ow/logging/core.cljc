@@ -1,7 +1,7 @@
 (ns ow.logging.core
-  #?(:cljs (:require-macros [ow.logging.core :refer [with-initialized-logging with-instance with-historical-logging-info
-                                                     with-logging-info with-checkpoint* with-checkpoint with-data
-                                                     with-logging with-appended with-prepended with-replaced]]))
+  #?(:cljs (:require-macros [ow.logging.core :refer [#_with-initialized-logging #_with-instance with-historical-logging-info
+                                                     #_with-logging-info with-checkpoint* with-checkpoint with-data
+                                                     #_with-logging with-appended with-prepended with-replaced]]))
   (:require [clojure.string :as s]))
 
 (def MAX_INT #?(:clj  Integer/MAX_VALUE
@@ -200,9 +200,10 @@
   `(inject-logging-info! ~logging-info
      (fn __hide# [] ~@body)))
 
-(defmacro with-historical-logging-info [{:keys [checkpoints data] :as logging-info} & body]
-  `(with-prepended ~checkpoints ~data
-     ~@body))
+(defmacro with-historical-logging-info [logging-info & body]
+  `(let [{checkpoints# :checkpoints data# :data} ~logging-info]
+     (with-prepended checkpoints# data#
+       ~@body)))
 
 (defmacro with-checkpoint* [name [& args] & body]
   `(with-appended [(make-checkpoint '~name ~@args)] {}
