@@ -52,8 +52,8 @@
                          [location file line])))
 
                    (is-system? [location]
-                     (or (s/starts-with? location "ow$logging")
-                         (re-matches #"[^\$]+" location)
+                     (or (re-find #"ow.logging" location)
+                         #_(re-matches #"[^\$]+" location)
                          (re-matches #"[A-Z][a-zA-Z0-9-_]+\.cljs\$.+" location)
                          (s/starts-with? location "figwheel$")
                          (s/starts-with? location "cljs$core")
@@ -76,11 +76,14 @@
                 :time     (js/Date.)}))))
 
 (defn make-checkpoint [name & args]  ;; TODO: create record for checkpoint, to prevent overly verbose printing (e.g. of large arguments)
-  (-> {:id   (rand-int MAX_INT)
-       :name name}
-      (merge (current-ste-info))
-      (into  [(when-not (empty? args)
-                [:args (map pr-str args)])])))
+  (let [name (if (symbol? name)
+               (str name)
+               name)]
+    (-> {:id   (rand-int MAX_INT)
+         :name name}
+        (merge (current-ste-info))
+        (into  [(when-not (empty? args)
+                  [:args (map pr-str args)])]))))
 
 #_(defn append-checkpoints [logging-info checkpoints]
   (update logging-info :checkpoints #(-> (concat % checkpoints) vec)))
@@ -206,7 +209,7 @@
        ~@body)))
 
 (defmacro with-checkpoint* [name [& args] & body]
-  `(with-appended [(make-checkpoint '~name ~@args)] {}
+  `(with-appended [(make-checkpoint ~name ~@args)] {}
      ~@body))
 
 (defmacro with-checkpoint [name & body]

@@ -33,14 +33,15 @@
                                   [ring/ring-codec "1.1.1"]
                                   [commons-io "2.6"]
                                   [ring/ring-core "1.7.0"]
-                                  [ring-cors "0.1.12"]]
+                                  [ring-cors "0.1.12"]
+                                  [clj-stacktrace "0.2.8"]]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}}
 
   :cljsbuild {:builds [{:id "nodejs-prod"
-                        :source-paths ["src/cljc"]
+                        :source-paths ["src/cljc" "src/cljs"]
                         :compiler {:target :nodejs
-                                   :main ow.logging.api.alpha
+                                   :main ow.logging
                                    :output-dir "lib/cljs/prod/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
@@ -52,10 +53,10 @@
                                    :verbose true}}
 
                        {:id "nodejs-dev"
-                        :source-paths ["src/cljc"]
+                        :source-paths ["src/cljc" "src/cljs"]
                         :figwheel true  ;; inject figwheel socket handling code into resulting js
                         :compiler {:target :nodejs
-                                   :main ow.logging.api.alpha
+                                   :main ow.logging
                                    :output-dir "lib/cljs/dev/cljow-log"
                                    :output-to "lib/cljs/cljow-log.js"
                                    :optimizations :none
