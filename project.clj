@@ -13,7 +13,7 @@
                  ;;; to resolve conflicts (due to :pedantic? :abort):
                  [com.google.errorprone/error_prone_annotations "2.1.3"]
                  [com.google.code.findbugs/jsr305 "3.0.2"]]
-  :source-paths ["src/cljc"]
+  :source-paths ["src/cljc" "src/cljs"]
   :clean-targets [:target-path :compile-path "lib/cljs"]
   :pedantic? :abort
 
