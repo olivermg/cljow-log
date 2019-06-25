@@ -49,3 +49,7 @@
 (defn ^:export with-historical-logging-info [logging-info cb]
   (am/with-historical-logging-info logging-info
     (cb)))
+
+(defn ^:export with-detached-logging-info [obj cb]
+  (am/with-detached-logging-info obj
+    (cb)))

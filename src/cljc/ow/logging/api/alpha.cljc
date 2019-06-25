@@ -99,6 +99,12 @@
   [logging-info & body]
   `(cm/with-historical-logging-info ~logging-info ~@body))
 
+(defmacro with-detached-logging-info
+  "Detaches attached logging-info from obj and uses that to invoke body in the context of
+  with-historical-logging-info."
+  [obj & body]
+  `(mtm/with-detached-logging-info ~obj ~@body))
+
 #_(defmacro fn
   "Same as clojure.core/fn, but also adds a logging checkpoint upon invocation of the fn."
   [name [& args] & body]
