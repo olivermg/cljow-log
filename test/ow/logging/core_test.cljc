@@ -20,7 +20,7 @@
       (a/go-loop [x (a/<! foo1r)]
         (when-not (nil? x)
           (let [[x] x]
-            (l/with-checkpoint inside-foo1
+            (l/with-checkpoint "inside-foo1"
               (capture (l/log-data :info "foo1-1" x))
               (Thread/sleep (rand-int 1000))
               (capture (l/log-data :info "foo1-2" x))
