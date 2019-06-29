@@ -171,9 +171,10 @@
      :cljs (let [current-domain (doto (.create domain)
                                   (.enter))]
              (set! (.-logging_info current-domain) logging-info)
-             (let [cb-result (cb)]
-               (.exit current-domain)
-               cb-result))))
+             (try
+               (cb)
+               (finally
+                 (.exit current-domain))))))
 
 (defmacro with-replaced [logging-info & body]
   `(replace! ~logging-info
