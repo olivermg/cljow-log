@@ -19,6 +19,11 @@
                      [ow.logging.log :as l]
                      [ow.logging.meta :as mt])))
 
+(defn init []
+  "Initialized logging facility."
+  []
+  (c/init))
+
 (defmacro with-checkpoint
   "Adds a logging checkpoint."
   [name & body]

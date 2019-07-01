@@ -9,6 +9,9 @@
        #_(.parse js/JSON)
        js->clj))
 
+(defn ^:export init []
+  (a/init))
+
 (defn ^:export with-checkpoint [name cb]
   (am/with-checkpoint name
     (cb)))
