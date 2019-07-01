@@ -14,16 +14,50 @@
 
 
 (defn pr-str-val [v]
-  (pr-str #?(:clj  v
-             :cljs (cond
-                     (and (instance? js/Object v)
-                          (not= (some-> v type pr-str (s/split #"/") first)
-                                "cljs.core"))
-                     (->> (js-keys v)
-                          (map (fn [k] [k (aget v k)]))
-                          (into {}))
+  #?(:clj  (pr-str v)
+     :cljs #_(letfn [(jsobj->clj [o i]
+                     (cond
+                       (> i 2) o
 
-                     true v))))
+                       (map? o)
+                       (do (println "MAP" o)
+                           (->> o
+                                (map (fn [[k v]]
+                                       (when-not (fn? v)
+                                         [k (jsobj->clj v (inc i))])))
+                                (into {})))
+
+                       (vector? o)
+                       (do (println "VEC" o)
+                           (->> o
+                                (map (fn [v]
+                                       (jsobj->clj v (inc i))))
+                                vec))
+
+                       (set? o)
+                       (do (println "SET" o)
+                           (->> o
+                                (map (fn [v] (jsobj->clj v (inc i))))
+                                set))
+
+                       (fn? o)
+                       (do (println "FN")
+                           "<fn>")
+
+                       (and (instance? js/Object o)
+                            (not= (some-> o type pr-str (s/split #"/") first)
+                                  "cljs.core"))
+                       (do (println "JS" o)
+                           (->> (js-keys v)
+                                (map (fn [k] (let [kv (aget v k)]
+                                               (when-not (fn? kv)
+                                                 [(keyword k) (jsobj->clj kv (inc i))]))))
+                                (into {})))
+
+                       true o))]
+
+               (pr-str (jsobj->clj v 0)))
+     (pr-str v)))
 
 (defn pr-str-map-vals [m]
   (->> m
