@@ -13,23 +13,23 @@
 #?(:cljs (set! (.-stackTraceLimit js/Error) 50))
 
 
+(defn pr-str-val [v]
+  (pr-str #?(:clj  v
+             :cljs (cond
+                     (and (instance? js/Object v)
+                          (not= (some-> v type pr-str (s/split #"/") first)
+                                "cljs.core"))
+                     (->> (js-keys v)
+                          (map (fn [k] [k (aget v k)]))
+                          (into {}))
+
+                     true v))))
+
 (defn pr-str-map-vals [m]
-  (letfn [(pr-str* [v]
-            (pr-str #?(:clj  v
-                       :cljs (cond
-                               (and (instance? js/Object v)
-                                    (not= (some-> v type pr-str (s/split #"/") first)
-                                          "cljs.core"))
-                               (->> (js-keys v)
-                                    (map (fn [k] [k (aget v k)]))
-                                    (into {}))
-
-                               true v))))]
-
-    (->> m
-         (map (fn [[k v]]
-                [k (pr-str v)]))
-         (into {}))))
+  (->> m
+       (map (fn [[k v]]
+              [k (pr-str-val v)]))
+       (into {})))
 
 (defn current-ste-info []
   #?(:clj (let [st                (some-> (Throwable.) .getStackTrace seq)
@@ -96,7 +96,7 @@
          :name name}
         (merge (current-ste-info))
         (into  [(when-not (empty? args)
-                  [:args (map pr-str args)])]))))
+                  [:args (map pr-str-val args)])]))))
 
 #_(defn append-checkpoints [logging-info checkpoints]
   (update logging-info :checkpoints #(-> (concat % checkpoints) vec)))

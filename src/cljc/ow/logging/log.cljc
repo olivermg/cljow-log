@@ -14,10 +14,10 @@
                 (cond
                   (map? data) (c/pr-str-map-vals data)
                   (nil? data) {}
-                  true        {::log-data (pr-str data)})))))
+                  true        {::log-data (c/pr-str-val data)})))))
 
 (defn log-str [level msg & [data]]
-  (pr-str (log-data level msg data)))
+  (c/pr-str-val (log-data level msg data)))
 
 (defn log [level msg & [data]]
   ;;; TODO: maybe use a logging backend here (at least on the java side)?
