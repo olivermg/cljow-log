@@ -4,9 +4,9 @@
 
 (defn- js->clj* [v]
   (->> v
-       clj->js
-       (.stringify js/JSON)
-       (.parse js/JSON)
+       #_clj->js
+       #_(.stringify js/JSON)  ;; NOTE: crashes for circular structures
+       #_(.parse js/JSON)
        js->clj))
 
 (defn ^:export with-checkpoint [name cb]
