@@ -12,11 +12,24 @@
 #?(:cljs (def domain (js/require "domain")))
 #?(:cljs (set! (.-stackTraceLimit js/Error) 50))
 
+
 (defn pr-str-map-vals [m]
-  (->> m
-       (map (fn [[k v]]
-              [k (pr-str v)]))
-       (into {})))
+  (letfn [(pr-str* [v]
+            (pr-str #?(:clj  v
+                       :cljs (cond
+                               (and (instance? js/Object v)
+                                    (not= (some-> v type pr-str (s/split #"/") first)
+                                          "cljs.core"))
+                               (->> (js-keys v)
+                                    (map (fn [k] [k (aget v k)]))
+                                    (into {}))
+
+                               true v))))]
+
+    (->> m
+         (map (fn [[k v]]
+                [k (pr-str v)]))
+         (into {}))))
 
 (defn current-ste-info []
   #?(:clj (let [st                (some-> (Throwable.) .getStackTrace seq)
