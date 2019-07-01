@@ -9,7 +9,9 @@
 
 #?(:clj  (def ^:dynamic +logging-info+ {:checkpoints []}))
 
-#?(:cljs (def domain (js/require "domain")))
+#?(:cljs (do (def domain (js/require "domain"))
+             (doto (.create domain)
+               (.enter))))
 #?(:cljs (set! (.-stackTraceLimit js/Error) 50))
 
 
