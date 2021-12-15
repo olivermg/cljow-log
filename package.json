@@ -1,0 +1,9 @@
+{
+  "name": "cljow-log",
+  "version": "0.0.1",
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ws": "^8.3.0"
+  }
+}
