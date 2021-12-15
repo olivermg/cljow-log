@@ -14,6 +14,8 @@ pom.xml.asc
 /node_modules/
 /log
 /lib/cljs
-/package*.json
 *~
 *.swp
+.calva/
+.clj-kondo/
+.lsp/
