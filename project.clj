@@ -73,7 +73,7 @@
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
                   ["vcs" "tag"]
-                  ["deploy" "clojars"]
+                  #_["deploy" "clojars"]
                   #_["clean"]
                   #_["uberjar"]
                   ["change" "version" "leiningen.release/bump-version"]
